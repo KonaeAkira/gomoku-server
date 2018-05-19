@@ -1,13 +1,25 @@
 #include <iostream>
+#include <string>
 #include <cassert>
 
 #include "game.hpp"
 #include "subprocess.hpp"
 
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/lexical_cast.hpp>
+#include "http/server.hpp"
+
+const char HTTP_HOST[] = "localhost",
+           HTTP_PORT[] = "8888",
+           HTTP_ROOT[] = "src/web";
+const size_t HTTP_THREADS = 4;
+
 game::game<15, 5> current_game;
 std::string PLAYER_BLACK = "\033[41mOffline\033[0m",
             PLAYER_WHITE = "\033[41mOffline\033[0m",
             tmp_string;
+std::ofstream live("src/web/live.log");
             
 class player
 {
@@ -97,7 +109,11 @@ public:
 };
 
 int main()
-{    
+{
+	// start http server
+	http::server3::server http_server(HTTP_HOST, HTTP_PORT, HTTP_ROOT, HTTP_THREADS);
+	http_server.run();
+
     player black("./test.out");
     if (black.name != "")
     	PLAYER_BLACK = black.name;

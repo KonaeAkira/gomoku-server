@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+	
+	<head>
+		<meta charset="utf-8">
+        <title>Gomoku Server</title>
+        <meta name="description" content="An HTTP Game server for Gomoku">
+        <meta name="author" content="KonaeAkira">
+		<script src="jquery.js" type="text/javascript"></script>
+		<script src="script.js" type="text/javascript"></script>
+		<style>
+			body {
+				background-color: #2c3e50;
+				margin: 0;
+			}
+
+			.board {
+				background-color: #34495e;
+			}
+
+			.boardCell {
+				width: 36px;
+				height: 36px;
+				background-size: 32px;
+				background-repeat: no-repeat;
+				background-position: center;
+			}
+
+			.boardCellBlack {
+				background-image: url("img/black.png");
+				
+			}
+
+			.boardCellWhite {
+				background-image: url("img/white.png");
+			}
+		</style>
+	</head>
+	
+	<body>
+		<table class="board"></table>
+	</body>
+	
+</html>
