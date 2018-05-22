@@ -10,10 +10,9 @@
 
 #include "reply.hpp"
 #include <string>
-#include <boost/lexical_cast.hpp>
 
 namespace http {
-namespace server3 {
+namespace server {
 
 namespace status_strings {
 
@@ -246,11 +245,11 @@ reply reply::stock_reply(reply::status_type status)
   rep.content = stock_replies::to_string(status);
   rep.headers.resize(2);
   rep.headers[0].name = "Content-Length";
-  rep.headers[0].value = boost::lexical_cast<std::string>(rep.content.size());
+  rep.headers[0].value = std::to_string(rep.content.size());
   rep.headers[1].name = "Content-Type";
   rep.headers[1].value = "text/html";
   return rep;
 }
 
-} // namespace server3
+} // namespace server
 } // namespace http

@@ -19,6 +19,7 @@ namespace game
 	}
 
 	typedef std::pair<size_t, size_t> coord;
+	const coord NIL = {-1, -1};
 	enum status
 	{
 		TURN_BLACK, // black's turn
@@ -64,6 +65,10 @@ namespace game
 		bool valid(size_t x, size_t y) const { return in_range(x, y) && __cell[x][y] == 0; }
 		bool valid(coord k) const { return valid(k.first, k.second); }
 		
+		// check if cell is already occupied
+		bool occupied(size_t x, size_t y) const { return in_range(x, y) && __cell[x][y] != 0; }
+		bool occupied(coord k) const { return occupied(k.first, k.second); }
+		
 		// return reference to the board cell corresponding to provided coordinate
 		char &cell(size_t x, size_t y) { assert(in_range(x, y)); return __cell[x][y]; }
 		char &cell(coord k) { return cell(k.first, k.second); }
@@ -80,26 +85,6 @@ namespace game
 		status game_status;
 		board<SIZE> game_board;
 		
-		void print_status()
-		{
-			std::cout << "  Game status: ";
-			switch (game_status)
-			{
-				case TURN_BLACK: std::cout << "TURN_BLACK"; break;
-				case TURN_WHITE: std::cout << "TURN_WHITE"; break;
-				case OVER_BLACK: std::cout << "OVER_BLACK"; break;
-				case OVER_WHITE: std::cout << "OVER_WHITE"; break;
-				case OVER_TIE: std::cout << "OVER_TIE";
-			}
-		}
-		
-		void print_last_move()
-		{
-			std::cout << "  Last move: ";
-			if (move_stack.empty()) std::cout << "\033[37mN/A\033[0m";
-			else std::cout << static_cast<char>(move_stack.back().first + 'A') << move_stack.back().second;
-		}
-		
 	public:
 	
 		game() { game_status = TURN_BLACK; }
@@ -107,54 +92,11 @@ namespace game
 		// return the game's status
 		status query() { return game_status; }
 		
-		// print game information
-		void print()
+		// return i-th move
+		coord get_move(size_t index)
 		{
-			for (size_t i = 0; i < 80; ++i)
-				std::cout << '=';
-			std::cout << '\n';
-			
-			for (size_t i = SIZE - 1; i < SIZE; --i)
-			{
-				if (i + 1 < 10) std::cout << ' ' << i + 1;
-				else std::cout << i + 1;
-				for (size_t j = 0; j < SIZE; ++j)
-				{
-					char format = ' ';
-					if (!move_stack.empty())
-						if (move_stack.back().first == i && move_stack.back().second == j)
-							format = '[';
-						else if (move_stack.back().first == i && move_stack.back().second + 1 == j)
-							format = ']';
-					switch (game_board.cell(i, j))
-					{
-						case  1: std::cout << format << "X"; break;
-						case -1: std::cout << format << "O"; break;
-						case  0: std::cout << format << "\033[90m.\033[0m";
-					}
-				}
-				
-				switch (SIZE - i)
-				{
-					case 1: std::cout << "  GOMOKU SERVER"; break;
-					case 2: std::cout << "  \033[37mhttps://github.com/KonaeAkira/gomoku-server\033[0m"; break;
-					case 4: print_status(); break;
-					case 5: print_last_move(); break;
-					case 7: std::cout << "  Black (X): " << PLAYER_BLACK; break;
-					case 8: std::cout << "  White (O): " << PLAYER_WHITE; break;
-				}
-				
-				std::cout << '\n';
-			}
-			
-			std::cout << "   ";
-			for (size_t j = 0; j < SIZE; ++j)
-				std::cout << static_cast<char>(j + 'A') << ' ';
-			std::cout << '\n';
-			
-			for (size_t i = 0; i < 80; ++i)
-				std::cout << '=';
-			std::cout << '\n';
+			if (index >= move_stack.size()) return NIL;
+			else return move_stack[index];
 		}
 		
 		// check if game is ongoing

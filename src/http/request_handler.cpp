@@ -12,17 +12,45 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <boost/lexical_cast.hpp>
+#include <iostream>
+#include <vector>
 #include "mime_types.hpp"
 #include "reply.hpp"
 #include "request.hpp"
 
+extern std::string get_move(int index);
+extern std::string get_name_black();
+extern std::string get_name_white();
+extern std::string get_status();
+
 namespace http {
-namespace server3 {
+namespace server {
 
 request_handler::request_handler(const std::string& doc_root)
   : doc_root_(doc_root)
 {
+}
+
+std::vector<std::string> split(const std::string &s, char delim) {
+  std::stringstream ss(s);
+  std::string item;
+  std::vector<std::string> tokens;
+  while (std::getline(ss, item, delim)) {
+    if (!item.empty())
+      tokens.push_back(item);
+  }
+  return tokens;
+}
+
+void wrap(const std::string& content, reply& rep)
+{
+  rep.status = reply::ok;
+  rep.content = content;
+  rep.headers.resize(2);
+  rep.headers[0].name = "Content-Length";
+  rep.headers[0].value = std::to_string(rep.content.size());
+  rep.headers[1].name = "Content-Type";
+  rep.headers[1].value = "text/html";
 }
 
 void request_handler::handle_request(const request& req, reply& rep)
@@ -47,6 +75,48 @@ void request_handler::handle_request(const request& req, reply& rep)
   if (request_path[request_path.size() - 1] == '/')
   {
     request_path += "index.html";
+  }
+  
+  // Check if request is a command
+  {
+    std::vector<std::string> vector(split(request_path, '/'));
+    if (!vector.empty() && vector[0] == "request")
+    {
+      if (vector.size() >= 2)
+      {
+        if (vector[1] == "move")
+        {
+          if (vector.size() >= 3)
+          {
+            wrap(get_move(std::stoi(vector[2])), rep);
+            return;
+          }
+        }
+        else if (vector[1] == "name")
+        {
+          if (vector.size() >= 3)
+          {
+            if (vector[2] == "black")
+            {
+              wrap(get_name_black(), rep);
+              return;
+            }
+            else if (vector[2] == "white")
+            {
+              wrap(get_name_white(), rep);
+              return;
+            }
+          }
+        }
+        else if (vector[1] == "status")
+        {
+          wrap(get_status(), rep);
+          return;
+        }
+      }
+      rep = reply::stock_reply(reply::not_implemented);
+      return;
+    }
   }
 
   // Determine the file extension.
@@ -74,7 +144,7 @@ void request_handler::handle_request(const request& req, reply& rep)
     rep.content.append(buf, is.gcount());
   rep.headers.resize(2);
   rep.headers[0].name = "Content-Length";
-  rep.headers[0].value = boost::lexical_cast<std::string>(rep.content.size());
+  rep.headers[0].value = std::to_string(rep.content.size());
   rep.headers[1].name = "Content-Type";
   rep.headers[1].value = mime_types::extension_to_type(extension);
 }
@@ -118,5 +188,5 @@ bool request_handler::url_decode(const std::string& in, std::string& out)
   return true;
 }
 
-} // namespace server3
+} // namespace server
 } // namespace http

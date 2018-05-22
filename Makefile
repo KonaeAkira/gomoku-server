@@ -6,11 +6,11 @@ LDFLAGS := -lboost_system -lboost_thread -lpthread
 CPPFLAGS := -std=c++11
 
 main.out: $(OBJ_FILES)
-	g++ $(CPPFLAGS) src/main.cpp $^ $(LDFLAGS) -o $@
+	g++ $(CPPFLAGS) src/main.cpp $^ $(LDFLAGS) -o gomoku-server.out
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 	g++ $(CPPFLAGS) -c -o $@ $<
 	
 .PHONY: clean
 clean :
-	-rm main.out $(OBJ_FILES)
+	-rm gomoku-server.out $(OBJ_FILES)

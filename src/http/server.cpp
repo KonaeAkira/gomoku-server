@@ -9,20 +9,18 @@
 //
 
 #include "server.hpp"
-#include <boost/thread/thread.hpp>
-#include <boost/bind.hpp>
-#include <boost/shared_ptr.hpp>
-#include <vector>
+#include <signal.h>
+#include <utility>
 
 namespace http {
-namespace server3 {
+namespace server {
 
 server::server(const std::string& address, const std::string& port,
-    const std::string& doc_root, std::size_t thread_pool_size)
-  : thread_pool_size_(thread_pool_size),
+    const std::string& doc_root)
+  : io_context_(1),
     signals_(io_context_),
     acceptor_(io_context_),
-    new_connection_(),
+    connection_manager_(),
     request_handler_(doc_root)
 {
   // Register to handle the signals that indicate when the server should exit.
@@ -33,7 +31,8 @@ server::server(const std::string& address, const std::string& port,
 #if defined(SIGQUIT)
   signals_.add(SIGQUIT);
 #endif // defined(SIGQUIT)
-  signals_.async_wait(boost::bind(&server::handle_stop, this));
+
+  do_await_stop();
 
   // Open the acceptor with the option to reuse the address (i.e. SO_REUSEADDR).
   boost::asio::ip::tcp::resolver resolver(io_context_);
@@ -44,47 +43,52 @@ server::server(const std::string& address, const std::string& port,
   acceptor_.bind(endpoint);
   acceptor_.listen();
 
-  start_accept();
+  do_accept();
 }
 
 void server::run()
 {
-  // Create a pool of threads to run all of the io_contexts.
-  std::vector<boost::shared_ptr<boost::thread> > threads;
-  for (std::size_t i = 0; i < thread_pool_size_; ++i)
-  {
-    boost::shared_ptr<boost::thread> thread(new boost::thread(
-          boost::bind(&boost::asio::io_context::run, &io_context_)));
-    threads.push_back(thread);
-  }
-
-  // Wait for all threads in the pool to exit.
-  for (std::size_t i = 0; i < threads.size(); ++i)
-    threads[i]->join();
+  // The io_context::run() call will block until all asynchronous operations
+  // have finished. While the server is running, there is always at least one
+  // asynchronous operation outstanding: the asynchronous accept call waiting
+  // for new incoming connections.
+  io_context_.run();
 }
 
-void server::start_accept()
+void server::do_accept()
 {
-  new_connection_.reset(new connection(io_context_, request_handler_));
-  acceptor_.async_accept(new_connection_->socket(),
-      boost::bind(&server::handle_accept, this,
-        boost::asio::placeholders::error));
+  acceptor_.async_accept(
+      [this](boost::system::error_code ec, boost::asio::ip::tcp::socket socket)
+      {
+        // Check whether the server was stopped by a signal before this
+        // completion handler had a chance to run.
+        if (!acceptor_.is_open())
+        {
+          return;
+        }
+
+        if (!ec)
+        {
+          connection_manager_.start(std::make_shared<connection>(
+              std::move(socket), connection_manager_, request_handler_));
+        }
+
+        do_accept();
+      });
 }
 
-void server::handle_accept(const boost::system::error_code& e)
+void server::do_await_stop()
 {
-  if (!e)
-  {
-    new_connection_->start();
-  }
-
-  start_accept();
+  signals_.async_wait(
+      [this](boost::system::error_code /*ec*/, int /*signo*/)
+      {
+        // The server is stopped by cancelling all outstanding asynchronous
+        // operations. Once all operations have finished the io_context::run()
+        // call will exit.
+        acceptor_.close();
+        connection_manager_.stop_all();
+      });
 }
 
-void server::handle_stop()
-{
-  io_context_.stop();
-}
-
-} // namespace server3
+} // namespace server
 } // namespace http
