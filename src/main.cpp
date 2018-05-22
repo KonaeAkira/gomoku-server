@@ -10,39 +10,47 @@
 
 #include "http_server.hpp"
 
-game::game<15, 5> current_game;
+const size_t BOARD_SIZE = 15;
+const size_t BOARD_COND = 5;
+
+game::game<BOARD_SIZE, BOARD_COND> current_game;
 std::string PLAYER_BLACK = "N/A",
             PLAYER_WHITE = "N/A";
+std::stringstream ss;
 
-std::vector<game::coord> get_all_moves()
-{
-	std::vector<game::coord> vector;
-	game::coord result = {0, 0};
-	for (int i = 0; result != game::NIL; ++i)
-		vector.push_back(result = current_game.get_move(i));
-	vector.pop_back();
-	return vector;
+void init_game_info()
+{	
+	ss << "BOARD," << BOARD_SIZE << ',' << BOARD_COND;
+	http_server::broadcast(ss.str()); ss.str(std::string());
+	
+	ss << "PLAYER,BLACK," << PLAYER_BLACK;
+	http_server::broadcast(ss.str()); ss.str(std::string());
+	
+	ss << "PLAYER,WHITE," << PLAYER_WHITE;
+	http_server::broadcast(ss.str()); ss.str(std::string());
 }
 
 int main(int argc, char **argv)
 {
-	if (argc != 3)
+	if (argc != 4)
 	{
-		std::cout << "Usage: gomoku-server <player1> <player2>\n";
+		std::cout << "Usage: gomoku-server <port> <player1> <player2>\n";
 		return 0;
 	}
 	
 	// launch players
-	player black(argv[1]);
+	player black(argv[2]);
     if (black.name != "") PLAYER_BLACK = black.name;
-    player white(argv[2]);
+    player white(argv[3]);
     if (white.name != "") PLAYER_WHITE = white.name;   
 
 	// start http and socket servers
-	http_server::start();
+	http_server::start(std::stoi(argv[1]));
+	
+	init_game_info();
     	
-    black.new_game(15, 5, "BLACK");
-    white.new_game(15, 5, "WHITE");
+    black.new_game(BOARD_SIZE, BOARD_COND, "BLACK");
+    white.new_game(BOARD_SIZE, BOARD_COND, "WHITE");
 	
 	while (current_game.ongoing())
 	{
@@ -56,7 +64,10 @@ int main(int argc, char **argv)
 				break;
 			}
 			white.notify_move(move);
-			http_server::broadcast_move(move.first, move.second, "BLACK");
+			ss << "MOVE,BLACK," << move.first << ',' << move.second;
+			http_server::broadcast(ss.str()); ss.str(std::string());
+			ss << "STATUS," << current_game.query();
+			http_server::broadcast(ss.str()); ss.str(std::string());
 		}
 		else if (current_game.query() == game::TURN_WHITE)
 		{
@@ -68,7 +79,10 @@ int main(int argc, char **argv)
 				break;
 			}
 			black.notify_move(move);
-			http_server::broadcast_move(move.first, move.second, "WHITE");
+			ss << "MOVE,WHITE," << move.first << ',' << move.second;
+			http_server::broadcast(ss.str()); ss.str(std::string());
+			ss << "STATUS," << current_game.query();
+			http_server::broadcast(ss.str()); ss.str(std::string());
 		}
 	}
 	

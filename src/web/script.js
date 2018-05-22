@@ -35,26 +35,36 @@ function updateUI() {
 	$("td .boardCellBlack").removeClass("boardCellBlack");
 	$("td .boardCellWhite").removeClass("boardCellWhite");
 	for (var i = 0; i < currentMove; ++i) {
-		if (moves[i][2] == "BLACK") {		
-			$("#boardCell_" + moves[i][0] + "_" + moves[i][1]).addClass("boardCellBlack");
+		if (moves[i][0] == "BLACK") {		
+			$("#boardCell_" + moves[i][1] + "_" + moves[i][2]).addClass("boardCellBlack");
 		} else {
-			$("#boardCell_" + moves[i][0] + "_" + moves[i][1]).addClass("boardCellWhite");
+			$("#boardCell_" + moves[i][1] + "_" + moves[i][2]).addClass("boardCellWhite");
 		}
-	}
-	$("#status").html(status);
+	}	
 }
 
 function initSocket() {
 	var socket = new WebSocket("ws://" + location.host);
 	socket.onmessage = function(event) {
-		var message = event.data.split(',');
-		if (message[0] == "MOVE") {
+		console.log(event.data);
+		var message = event.data.split(",");
+		if (message[0] == "PLAYER") {
+			if (message[1] == "BLACK") {
+				$("#nameBlack").html(message[2]);
+			} else {
+				$("#nameWhite").html(message[2]);
+			}
+		} else if (message[0] == "MOVE") {
 			if (currentMove == moves.length) {
 				++currentMove;
 			}
 			moves.push([message[1], message[2], message[3]]);
-			resetTimer();
-			updateUI();
+			resetTimer(); updateUI();
+		} else if (message[0] == "STATUS") {
+			$("#status").html(message[1]);
+			if (message[1].split("_")[0] != "TURN") {
+				stopTimer();
+			}
 		}
 	}
 }

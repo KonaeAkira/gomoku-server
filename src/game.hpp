@@ -20,6 +20,7 @@ namespace game
 
 	typedef std::pair<size_t, size_t> coord;
 	const coord NIL = {-1, -1};
+	
 	enum status
 	{
 		TURN_BLACK, // black's turn
@@ -28,6 +29,19 @@ namespace game
 		OVER_WHITE, // white won
 		OVER_TIE // tie
 	}; // enum status
+	
+	std::ostream &operator << (std::ostream &os, status stat)
+	{
+		switch (stat)
+		{
+			case TURN_BLACK: os << "TURN_BLACK"; break;
+			case TURN_WHITE: os << "TURN_WHITE"; break;
+			case OVER_BLACK: os << "OVER_BLACK"; break;
+			case OVER_WHITE: os << "OVER_WHITE"; break;
+			case OVER_TIE: os << "OVER_TIE"; break;
+		}
+		return os;
+	}
 
 	template<size_t SIZE>
 	class board

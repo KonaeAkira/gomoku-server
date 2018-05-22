@@ -20,8 +20,10 @@ namespace http_server
 	public:
 		typedef websocketpp::connection_hdl connection_hdl;
 		typedef websocketpp::server<websocketpp::config::asio> server;
+		
+		std::vector<std::string> init_list;
 
-		telemetry_server() : m_count(0) {
+		telemetry_server() {
 		    // set up access channels to only log interesting things
 		    m_endpoint.clear_access_channels(websocketpp::log::alevel::all);
 		    m_endpoint.set_access_channels(websocketpp::log::alevel::access_core);
@@ -36,6 +38,10 @@ namespace http_server
 		    m_endpoint.set_open_handler(bind(&telemetry_server::on_open,this,_1));
 		    m_endpoint.set_close_handler(bind(&telemetry_server::on_close,this,_1));
 		    m_endpoint.set_http_handler(bind(&telemetry_server::on_http,this,_1));
+		}
+		
+		~telemetry_server() {
+			m_endpoint.stop_listening();
 		}
 
 		void run(std::string docroot, uint16_t port) {
@@ -59,12 +65,13 @@ namespace http_server
 		    }
 		}
 		
-		void broadcast_message(std::stringstream &ss) {
+		void broadcast_message(std::string &message) {
 			con_list::iterator it;
 			std::lock_guard<std::mutex> lock(m_connections_mtx);
 		    for (it = m_connections.begin(); it != m_connections.end(); ++it) {
-		        m_endpoint.send(*it,ss.str(),websocketpp::frame::opcode::text);
+		        m_endpoint.send(*it,message,websocketpp::frame::opcode::text);
 		    }
+		    init_list.push_back(message);
 		}
 
 		void on_http(connection_hdl hdl) {
@@ -117,15 +124,8 @@ namespace http_server
 		void on_open(connection_hdl hdl) {
 			std::lock_guard<std::mutex> lock(m_connections_mtx);
 		    m_connections.insert(hdl);
-		    std::vector<std::pair<size_t, size_t>> moves(get_all_moves());
-		    bool turn = false;
-		    for (std::pair<size_t, size_t> move : moves)
-		    {
-		    	std::stringstream ss;
-		    	ss << "MOVE," << move.first << ',' << move.second << ',' << (turn ? "WHITE" : "BLACK");
-		    	m_endpoint.send(hdl,ss.str(),websocketpp::frame::opcode::text);
-		    	turn = !turn;
-		    }
+		    for (std::string &str : init_list)
+		    	m_endpoint.send(hdl,str,websocketpp::frame::opcode::text);
 		}
 
 		void on_close(connection_hdl hdl) {
@@ -133,34 +133,26 @@ namespace http_server
 		    m_connections.erase(hdl);
 		}
 	private:
-		typedef std::set<connection_hdl,std::owner_less<connection_hdl>> con_list;
-		
+		typedef std::set<connection_hdl,std::owner_less<connection_hdl>> con_list;		
 		server m_endpoint;
 		con_list m_connections;
 		std::mutex m_connections_mtx;
-		
 		std::string m_docroot;
-		
-		// Telemetry data
-		uint64_t m_count;
 	};
 	
-	static telemetry_server server_instance;
+	telemetry_server server_instance;
 
-	void __start() {
-		server_instance.run("src/web/", 8000);
+	void __start(uint16_t port) {
+		server_instance.run("src/web/", port);
 	}
 	
-	void start() {
-		std::thread t(__start);
+	void start(uint16_t port) {
+		std::thread t(__start, port);
 		t.detach();
 	}
 	
-	void broadcast_move(size_t x, size_t y, std::string side)
-	{
-		std::stringstream ss;
-		ss << "MOVE," << x << ',' << y << ',' << side;
-		server_instance.broadcast_message(ss);
+	void broadcast(std::string str) {
+		server_instance.broadcast_message(str);
 	}
 	
 } // namespace server
