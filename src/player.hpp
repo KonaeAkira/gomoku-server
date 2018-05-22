@@ -1,5 +1,4 @@
-#ifndef PLAYER_HPP
-#define PLAYER_HPP
+#pragma once
 
 #include <iostream>
 
@@ -89,5 +88,3 @@ public:
 	}
 
 }; // class player
-
-#endif // PLAYER_HPP

@@ -8,6 +8,8 @@ Original Author: Konstantin Tretyakov
 License: MIT
 */
 
+#pragma once
+
 #include <ext/stdio_filebuf.h> // NB: Specific to libstdc++
 #include <sys/wait.h>
 #include <unistd.h>

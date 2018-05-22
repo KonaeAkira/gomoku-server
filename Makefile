@@ -14,3 +14,8 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
 .PHONY: clean
 clean :
 	-rm gomoku-server.out $(OBJ_FILES)
+	
+.PHONY: recompile
+recompile:
+	-rm gomoku-server.out
+	make main.out

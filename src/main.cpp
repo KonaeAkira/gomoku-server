@@ -3,48 +3,25 @@
 #include <string>
 #include <cassert>
 #include <cstdlib>
-#include <thread>
 
 #include "game.hpp"
 #include "subprocess.hpp"
 #include "player.hpp"
 
-#include <boost/asio.hpp>
-#include <boost/bind.hpp>
-#include <boost/lexical_cast.hpp>
-#include "http/server.hpp"
-
-const char HTTP_HOST[] = "192.168.1.102",
-           HTTP_PORT[] = "8888",
-           HTTP_ROOT[] = "src/web";
+#include "http_server.hpp"
 
 game::game<15, 5> current_game;
 std::string PLAYER_BLACK = "N/A",
-            PLAYER_WHITE = "N/A",
-            tmp_string;
+            PLAYER_WHITE = "N/A";
 
-std::string get_move(int index)
+std::vector<game::coord> get_all_moves()
 {
-	std::string result;
-	game::coord move = current_game.get_move(index);
-	if (move == game::NIL) result = "NIL";
-	else result = std::to_string(move.first) + "," + std::to_string(move.second);
-	return result;
-}
-
-std::string get_name_black() { return PLAYER_BLACK; }
-std::string get_name_white() { return PLAYER_WHITE; }
-
-std::string get_status()
-{
-	switch (current_game.query())
-	{
-		case game::TURN_BLACK: return "TURN_BLACK";
-		case game::TURN_WHITE: return "TURN_WHITE";
-		case game::OVER_BLACK: return "OVER_BLACK";
-		case game::OVER_WHITE: return "OVER_WHITE";
-		case game::OVER_TIE: return "OVER_TIE";
-	}
+	std::vector<game::coord> vector;
+	game::coord result = {0, 0};
+	for (int i = 0; result != game::NIL; ++i)
+		vector.push_back(result = current_game.get_move(i));
+	vector.pop_back();
+	return vector;
 }
 
 int main(int argc, char **argv)
@@ -61,10 +38,8 @@ int main(int argc, char **argv)
     player white(argv[2]);
     if (white.name != "") PLAYER_WHITE = white.name;   
 
-	// start http server
-	http::server::server http_server(HTTP_HOST, HTTP_PORT, HTTP_ROOT);
-	std::thread server_thread(&http::server::server::run, &http_server);
-	server_thread.detach(); 
+	// start http and socket servers
+	http_server::start();
     	
     black.new_game(15, 5, "BLACK");
     white.new_game(15, 5, "WHITE");
@@ -81,6 +56,7 @@ int main(int argc, char **argv)
 				break;
 			}
 			white.notify_move(move);
+			http_server::broadcast_move(move.first, move.second, "BLACK");
 		}
 		else if (current_game.query() == game::TURN_WHITE)
 		{
@@ -92,6 +68,7 @@ int main(int argc, char **argv)
 				break;
 			}
 			black.notify_move(move);
+			http_server::broadcast_move(move.first, move.second, "WHITE");
 		}
 	}
 	

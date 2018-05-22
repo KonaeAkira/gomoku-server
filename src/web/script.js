@@ -8,6 +8,9 @@ var status = "OFFLINE";
 var time = 0;
 
 function updateTimer() {
+	if (time == -1) {
+		return;
+	}
 	++time;
 	if (time % 10 == 0) {
 		$("#timer").html(time / 10 + ".0");
@@ -17,7 +20,7 @@ function updateTimer() {
 }
 
 function resetTimer() { time = 0; }
-
+function stopTimer() { time = -1; }
 
 function drawBoard() {
 	for (var i = 0; i < SIZE; ++i) {
@@ -31,48 +34,34 @@ function drawBoard() {
 function updateUI() {
 	$("td .boardCellBlack").removeClass("boardCellBlack");
 	$("td .boardCellWhite").removeClass("boardCellWhite");
-	var color = ["boardCellBlack", "boardCellWhite"];
 	for (var i = 0; i < currentMove; ++i) {
-		$("#boardCell_" + moves[i][0] + "_" + moves[i][1]).addClass(color[i & 1]);
+		if (moves[i][2] == "BLACK") {		
+			$("#boardCell_" + moves[i][0] + "_" + moves[i][1]).addClass("boardCellBlack");
+		} else {
+			$("#boardCell_" + moves[i][0] + "_" + moves[i][1]).addClass("boardCellWhite");
+		}
 	}
 	$("#status").html(status);
 }
 
-function pollStatus() {
-	$.get("/request/status", function(response) { 
-		status = response;
-	});
-}
-
-function pollMove() {
-	$.get("/request/move/" + moves.length, function(response) { 
-		if (response != "NIL") {
+function initSocket() {
+	var socket = new WebSocket("ws://" + location.host);
+	socket.onmessage = function(event) {
+		var message = event.data.split(',');
+		if (message[0] == "MOVE") {
 			if (currentMove == moves.length) {
 				++currentMove;
 			}
-			pollStatus();
-			moves.push(response.split(","));
+			moves.push([message[1], message[2], message[3]]);
 			resetTimer();
 			updateUI();
 		}
-	});
+	}
 }
 
 $(document).ready(function() {
 	// initialize the board
 	drawBoard();
-	// get black player's name
-	$.get("/request/name/black", function(response) {
-		$("#nameBlack").html(response);
-	});
-	// get white player's name
-	$.get("/request/name/black", function(response) {
-		$("#nameWhite").html(response);
-	});
-	// poll initial status
-	pollStatus();
-	// start polling for new moves
-	window.setInterval(pollMove, 200);
 	window.setInterval(updateTimer, 100);
 	// key controls
 	$(document).keydown(function(event) {
@@ -93,4 +82,5 @@ $(document).ready(function() {
 				break;
 		}
 	});
+	initSocket();
 });
