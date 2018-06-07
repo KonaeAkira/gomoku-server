@@ -11,8 +11,6 @@
 #include <thread>
 #include <mutex>
 
-extern std::vector<std::pair<size_t, size_t>> get_all_moves();
-
 namespace http_server
 {
 
@@ -61,7 +59,7 @@ namespace http_server
 		    try {
 		        m_endpoint.run();
 		    } catch (websocketpp::exception const & e) {
-		        std::cout << e.what() << std::endl;
+		        std::cerr << e.what() << std::endl;
 		    }
 		}
 		
@@ -141,14 +139,9 @@ namespace http_server
 	};
 	
 	telemetry_server server_instance;
-
-	void __start(uint16_t port) {
-		server_instance.run("src/web/", port);
-	}
 	
 	void start(uint16_t port) {
-		std::thread t(__start, port);
-		t.detach();
+		server_instance.run("src/web/", port);
 	}
 	
 	void broadcast(std::string str) {
