@@ -10,19 +10,19 @@ A Gomoku Server to host matches between Gomoku-playing computer programs.
 
 **Dependencies:**
 
-- Boost 1.67
+- Boost 1.65++
 - [WebSocket++ 0.7.0](https://github.com/zaphoyd/websocketpp/releases/tag/0.7.0)
 
 ```
-$ ./make
+$ make
 ```
 
 ## Usage
 
-### Using the server
+### Starting the server
 
 ```
-$ ./gomoku-server <port> <player1> <player2>
+$ ./gomoku-server.out <player1> <player2> [port]
 ```
 
 ### Creating players compatible with the server
@@ -49,7 +49,7 @@ OK KonaeAkira's Gomoku Bot
 
 The program should initialize itself and start with an empty board with the given properties.
 
-- Input: `NEW <board_size> <winning_condition> <player_side> <total_time> <time_increment>`
+- Input: `NEW <board_size> <winning_condition> <player_side>`
 - Output: `OK`
 
 *Note:* The total time and time increment are given in seconds. If the time limit of any of them is exceeded, the player will be disqualified.
