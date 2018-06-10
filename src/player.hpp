@@ -32,17 +32,18 @@ public:
 			std::getline(process->stdout, name);
 			while (!name.empty() && name[0] == ' ')
 				name = name.substr(1, name.size() - 1);
+			std::clog << "Spawned " << name << " (PID " << process->child_pid << ")" << std::endl;
 		}
 		else
 		{
 			std::getline(process->stdout, reply);
-			std::cerr << reply << '\n';
+			std::cerr << "[" << name << "] " << reply << std::endl;
 		}
 	}
 	
 	~player() { terminate(); }
 	
-	void new_game(size_t size, size_t cond, std::string side)
+	void new_game(size_t size, size_t cond, &std::string side)
 	{
 		mutex.lock();
 		process->stdin << "NEW " << size << ' ' << cond << ' ' << side << std::endl;
@@ -53,7 +54,7 @@ public:
 		if (reply != "OK")
 		{
 			std::getline(process->stdout, reply);
-			std::cerr << reply << '\n';
+			std::cerr << "[" << name << "] " << reply << std::endl;
 		}
 	}
 	
@@ -74,7 +75,7 @@ public:
 		else
 		{
 			std::getline(process->stdout, reply);
-			std::cerr << reply << '\n';
+			std::cerr << "[" << name << "] " << reply << std::endl;
 			return {-1, -1};
 		}
 	}
@@ -90,7 +91,7 @@ public:
 		if (reply != "OK")
 		{
 			std::getline(process->stdout, reply);
-			std::cerr << reply << '\n';
+			std::cerr << "[" << name << "] " << reply << std::endl;
 		}
 	}
 	
@@ -98,7 +99,7 @@ public:
 	{
 		std::lock_guard<std::mutex> lock(mutex);
 		kill(process->child_pid, 15);
-		std::clog << "Terminated PID " << process->child_pid << std::endl;
+		std::clog << "Terminated " << name << " (PID " << process->child_pid << ")" << std::endl;
 		delete process;
 	}
 	
