@@ -43,7 +43,7 @@ public:
 	
 	~player() { terminate(); }
 	
-	void new_game(size_t size, size_t cond, &std::string side)
+	void new_game(size_t size, size_t cond, std::string side)
 	{
 		mutex.lock();
 		process->stdin << "NEW " << size << ' ' << cond << ' ' << side << std::endl;

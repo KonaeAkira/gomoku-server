@@ -42,7 +42,7 @@ namespace http_server
 			m_endpoint.stop_listening();
 		}
 
-		void run(std::string &docroot, uint16_t port) {
+		void run(std::string docroot, uint16_t port) {
 		    std::stringstream ss;
 		    ss << "Running telemetry server on port "<< port <<" using docroot=" << docroot;
 		    m_endpoint.get_alog().write(websocketpp::log::alevel::app,ss.str());
