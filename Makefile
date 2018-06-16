@@ -1,17 +1,18 @@
-SRC_DIR := src/http
+SRC_DIR := src
 OBJ_DIR := obj
 SRC_FILES := $(wildcard $(SRC_DIR)/*.cpp)
 OBJ_FILES := $(patsubst $(SRC_DIR)/%.cpp,$(OBJ_DIR)/%.o,$(SRC_FILES))
 LDFLAGS := -lboost_system -lboost_thread -lpthread
-CPPFLAGS := -std=c++11 -O2
+CXXFLAGS := -std=c++11 -O2
 
-.PHONY: gomoku-server.out clean
+.PHONY: clean
 
 gomoku-server.out: $(OBJ_FILES)
-	g++ $(CPPFLAGS) src/main.cpp $^ $(LDFLAGS) -o $@
+	g++ $(CXXFLAGS) $^ $(LDFLAGS) -o $@
 
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp
-	g++ $(CPPFLAGS) -c -o $@ $<
+	-mkdir -p obj
+	g++ $(CXXFLAGS) -c -o $@ $<
 	
-clean :
-	-rm gomoku-server.out $(OBJ_FILES)
+clean:
+	-rm $(OBJ_FILES)
