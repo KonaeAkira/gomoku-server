@@ -141,7 +141,7 @@ namespace http_server
 	telemetry_server server_instance;
 	
 	void start(uint16_t port) {
-		server_instance.run("src/web/", port);
+		server_instance.run("web/", port);
 	}
 	
 	void broadcast(std::string str) {

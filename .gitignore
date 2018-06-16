@@ -34,3 +34,6 @@
 # Data files
 *.dat
 *.json
+
+bin/*
+obj/*
